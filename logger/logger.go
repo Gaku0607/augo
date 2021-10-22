@@ -47,11 +47,7 @@ func (l *Logger) DebugPrint(fprint func(io.Writer, ...interface{}) (int, error),
 }
 
 func (l *Logger) Log(parms *LoggerParms) {
-	f := fmt.Fprint
-	if IsOutColor() {
-		f = parms.setTypeColor()
-	}
-	l.DebugPrint(f, l.Config.Format(parms))
+	l.DebugPrint(parms.setTypeColor(), l.Config.Format(parms))
 }
 
 type LoggerConfig struct {

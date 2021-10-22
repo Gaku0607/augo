@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"time"
 
@@ -24,18 +23,9 @@ func GetLogTitle() string {
 	return LogTitle
 }
 
-//默認終端機輸出Log時會帶有顏色
-var isOutColor = true
-
-//默認終端機輸出Log時會帶有顏色
-//當Log輸出不為終端機時 建議關閉
-func IsOutColor() bool {
-	return isOutColor
-}
-
-//修改當前Log輸出時是否帶顏色
-func SetOutColor(b bool) {
-	isOutColor = b
+//關閉Log的顏色輸出
+func NoColor() {
+	color.NoColor = true
 }
 
 //默認LogTimeFormat
@@ -47,10 +37,10 @@ func SetTimeFormat(format string) {
 }
 
 //默認輸出Log方式
-var defaultWriter io.Writer = os.Stdout
+var defaultWriter io.Writer = color.Output
 
 //默認輸出Log方式
-var defaultErrWriter io.Writer = os.Stderr
+var defaultErrWriter io.Writer = color.Error
 
 //設置Log的輸出方式
 func SetWriter(w io.Writer) {
