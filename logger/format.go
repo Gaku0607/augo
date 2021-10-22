@@ -11,6 +11,19 @@ import (
 	"github.com/fatih/color"
 )
 
+//打印LOG產生的標頭
+var LogTitle = "TEST"
+
+//設置標頭
+func SetLogTitle(title string) {
+	LogTitle = title
+}
+
+//獲取標頭
+func GetLogTitle() string {
+	return LogTitle
+}
+
 //默認終端機輸出Log時會帶有顏色
 var isOutColor = true
 
@@ -55,7 +68,8 @@ type LoggerFormatter func(*LoggerParms) string
 var (
 	defaultFormatter = func(f *LoggerParms) string {
 		str := fmt.Sprintf(
-			"[GAKU] %s |%s| ID:%d | %s | Files:%s ",
+			"[%s] %s |%s| ID:%d | %s | Files:%s ",
+			LogTitle,
 			f.Time,
 			f.Type,
 			f.RequsetId,
@@ -82,9 +96,10 @@ var (
 type LogKey map[string]interface{}
 
 const (
-	ERROR   = " ERROR "
-	REQUEST = " REQUEST "
-	RESULT  = " RESULT "
+	ERROR    = " ERROR "
+	REQUEST  = " REQUEST "
+	RESULT   = " RESULT "
+	Recovery = " Recovery "
 )
 
 //Logger.Log()輸出時所帶有的參數 key參數能夠自定義
@@ -105,6 +120,8 @@ func (l *LoggerParms) setTypeColor() func(w io.Writer, a ...interface{}) (int, e
 		return color.New(color.FgHiBlue).Fprint
 	case RESULT:
 		return color.New(color.FgHiGreen).Fprint
+	case Recovery:
+		return color.New(color.FgHiRed).Fprint
 	default:
 		return color.New(color.FgHiWhite).Fprint
 	}

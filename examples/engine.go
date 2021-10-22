@@ -14,9 +14,11 @@ func main() {
 	//設置系統
 	augo.SetSystemVersion(augo.MacOS)
 
+	logger.SetLogTitle("GAKU")
+
 	c := augo.NewCollector()
 	c.Logger.Config.Format = logger.JSONFormatter
-	c.Use(augo.Recovery(), print1())
+	c.Use(augo.Recovery(c.Logger), print1())
 	{
 		g1 := c.Group("/Users/YourPath1")
 		g1.Handler("/Test1", print2())
