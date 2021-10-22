@@ -119,7 +119,7 @@ func NewCollector(opts ...CollectorOption) *Collector {
 func DefautCollector() *Collector {
 	c := &Collector{}
 	c.defautParms()
-	c.Use(Recovery(), DeletFiles())
+	c.Use(Recovery(c.Logger), DeletFiles())
 	return c
 }
 
@@ -145,19 +145,23 @@ func (c *Collector) Request(req *Request) (err error) {
 	//設置每個請求的唯一標示
 	req.Id = c.setRequestId()
 
+	//打印Log
 	c.handleOnRequest(req)
+
 	ctx := c.pool.Get().(*Context)
 	//每個req都需重置先前的紀錄
 	ctx.reset(req)
 	ctx.handlers = c.nodes[ctx.Request.root]
 	ctx.Next()
-	c.handleOnResult(ctx)
 
-	if !ctx.Errs.IsEmpty() {
+	if ctx.Errs.IsEmpty() {
+		c.handleOnResult(ctx)
+	} else {
 		err = ctx.Errs
 	}
+
 	c.pool.Put(ctx)
-	return err
+	return
 }
 
 //每個Request的唯一標示

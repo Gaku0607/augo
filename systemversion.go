@@ -15,7 +15,7 @@ var pathChar = `/`
 func SetSystemVersion(version string) {
 	switch version {
 	case Windows:
-		pathChar = `/`
+		pathChar = `\`
 	case MacOS:
 		pathChar = `/`
 	case Linux:
