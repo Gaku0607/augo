@@ -102,9 +102,12 @@ func NewCollector(opts ...CollectorOption) *Collector {
 }
 
 //默認使用Recovery and DeletFiles 中間件
-func DefautCollector() *Collector {
+func DefautCollector(opts ...CollectorOption) *Collector {
 	c := &Collector{}
 	c.defautParms()
+	for _, opt := range opts {
+		opt(c)
+	}
 	c.Use(Recovery(c.Logger), DeletFiles())
 
 	debugPrint(`[WARNING] Creating an Engine instance with the DeleteFiles and Recovery middleware already attached.
