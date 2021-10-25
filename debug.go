@@ -2,6 +2,7 @@ package augo
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -11,15 +12,15 @@ func IsDebugging() bool {
 	return debugCode == augomode
 }
 
-var DebugPrintRouteFunc func(method, absolutePath string, nuHandlers int)
+var DebugPrintRouteFunc func(absolutePath string, nuHandlers int)
 
-func debugPrintRoute(method, absolutePath string, handlers HandlersChain) {
+func debugPrintRoute(absolutePath string, handlers HandlersChain) {
 	if IsDebugging() {
 		nuHandlers := len(handlers)
 		if DebugPrintRouteFunc == nil {
-			debugPrint("[SERVICE] %-6s --> %-4s (%d handlers)\n", absolutePath, strings.TrimLeft(method, pathChar), nuHandlers)
+			debugPrint("[SERVICE] %-6s --> %-4s (%d handlers)\n", absolutePath, filepath.Base(absolutePath), nuHandlers)
 		} else {
-			DebugPrintRouteFunc(absolutePath, method, nuHandlers)
+			DebugPrintRouteFunc(absolutePath, nuHandlers)
 		}
 	}
 }

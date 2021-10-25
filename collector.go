@@ -173,12 +173,12 @@ func (c *Collector) Close() error {
 }
 
 //註冊路徑
-func (c *Collector) addPaths(method, AbsolutePath string, handlers HandlersChain) {
+func (c *Collector) addPaths(AbsolutePath string, handlers HandlersChain) {
 	errormessage(len(AbsolutePath) > 0, "Path can not be empty")
 	errormessage(len(handlers) > 0, "Handlers can not be empty")
 	errormessage(!c.nodes.IsExist(AbsolutePath), fmt.Sprintf("%s is exist", AbsolutePath))
 
-	debugPrintRoute(method, AbsolutePath, handlers)
+	debugPrintRoute(AbsolutePath, handlers)
 
 	c.nodes.Set(AbsolutePath, handlers)
 }

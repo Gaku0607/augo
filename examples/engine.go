@@ -24,8 +24,7 @@ func main() {
 	}
 
 	{
-		g2 := c.Group("/Users/gaku/IRIS系統測試檔案/出倉單")
-		g2.Handler("/個例", print3())
+		c.Handler("/Users/gaku/IRIS系統測試檔案/出倉單", print3())
 	}
 	//設置定時
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
