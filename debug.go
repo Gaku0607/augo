@@ -8,6 +8,10 @@ import (
 
 var debugTitle = fmt.Sprintf("[%s-Debug]", LogTitle)
 
+func setDeBugTitle(title string) {
+	debugTitle = fmt.Sprintf("[%s-Debug]", title)
+}
+
 func IsDebugging() bool {
 	return debugCode == augomode
 }

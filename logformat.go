@@ -16,6 +16,7 @@ var LogTitle = "AUGO"
 //設置標頭
 func SetLogTitle(title string) {
 	LogTitle = title
+	setDeBugTitle(LogTitle)
 }
 
 //獲取標頭
