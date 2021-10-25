@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 	"sync/atomic"
-
-	"github.com/Gaku0607/augo/logger"
 )
 
 type CollectorOption func(*Collector)
@@ -17,36 +15,29 @@ func CollectorGroupRoot(root string) CollectorOption {
 	}
 }
 
-//修改Collector的LogMod
-func LoggerMode(b bool) CollectorOption {
-	return func(c *Collector) {
-		c.LogMode = b
-	}
-}
-
 //修改Collector的Logger
-func LoggerConfig(l *logger.Logger) CollectorOption {
+func SetLogger(l *Logger) CollectorOption {
 	return func(c *Collector) {
 		c.Logger = l
 	}
 }
 
 //修改Collector的RequestLogKey
-func RequestLogKey(f func(*Request) logger.LogKey) CollectorOption {
+func RequestLogKey(f func(*Request) LogKey) CollectorOption {
 	return func(c *Collector) {
 		c.requestlogkey = f
 	}
 }
 
 //修改Collector的ErrorLogKey
-func ErrorLogKey(f func(*Request, error) logger.LogKey) CollectorOption {
+func ErrorLogKey(f func(*Request, error) LogKey) CollectorOption {
 	return func(c *Collector) {
 		c.errlogkey = f
 	}
 }
 
 //修改Collector的ResultLogKey
-func ResultLogKey(f func(*Context) logger.LogKey) CollectorOption {
+func ResultLogKey(f func(*Context) LogKey) CollectorOption {
 	return func(c *Collector) {
 		c.resultlogkey = f
 	}
@@ -54,15 +45,15 @@ func ResultLogKey(f func(*Context) logger.LogKey) CollectorOption {
 
 var (
 	//Collector默認所使用的ErrLogKey
-	defaultErrLogKey = func(_ *Request, e error) logger.LogKey {
-		return logger.LogKey{"errMsg": e.Error()}
+	defaultErrLogKey = func(_ *Request, e error) LogKey {
+		return LogKey{"errMsg": e.Error()}
 	}
 	//Collector默認所使用的ReqLogKey
-	defaultReqLogKey = func(r *Request) logger.LogKey {
-		return logger.LogKey{"FileCount": len(r.Files)}
+	defaultReqLogKey = func(r *Request) LogKey {
+		return LogKey{"FileCount": len(r.Files)}
 	}
 	//Collector默認所使用的ResultLogKey
-	defaultResultLogKey = func(c *Context) logger.LogKey {
+	defaultResultLogKey = func(c *Context) LogKey {
 		return c.Keys
 	}
 )
@@ -70,31 +61,26 @@ var (
 type Collector struct {
 	PathGroup
 
-	//LoggerMode為true時會輸出Log
-	//Collector默認開啟Logger
-
-	LogMode bool
-
 	//Collector默認使用 logger.DefaultLogger()
 	//調用CollectorOption LoggerConfig 可自行修改輸出格式
 	//(參考logger.Logger logger.LoggerConfig)
 
-	Logger *logger.Logger
+	Logger *Logger
 
 	//Log輸出REQUEST時 可自定義RequestLogKey的部分
 	//Collector默認使用defaultRequestLogKey
 
-	requestlogkey func(*Request) logger.LogKey
+	requestlogkey func(*Request) LogKey
 
 	//Log輸出ERROR時 可自定義ErrLogKey的部分
 	//Collector默認使用defaultErrLogKey
 
-	errlogkey func(*Request, error) logger.LogKey
+	errlogkey func(*Request, error) LogKey
 
 	//Log輸出Result時 可自定義ResultLogKey的部分
 	//Collector默認使用defaultResultLogKey
 
-	resultlogkey func(*Context) logger.LogKey
+	resultlogkey func(*Context) LogKey
 
 	//每個路徑Node對應的Handlers
 
@@ -120,6 +106,10 @@ func DefautCollector() *Collector {
 	c := &Collector{}
 	c.defautParms()
 	c.Use(Recovery(c.Logger), DeletFiles())
+
+	debugPrint(`[WARNING] Creating an Engine instance with the DeleteFiles and Recovery middleware already attached.
+
+`)
 	return c
 }
 
@@ -133,8 +123,8 @@ func (c *Collector) defautParms() {
 	c.pool.New = func() interface{} {
 		return c.allocateContext()
 	}
-	c.LogMode = true
-	c.Logger = logger.NowLogger()
+
+	c.Logger = NowLogger()
 	c.errlogkey = defaultErrLogKey
 	c.requestlogkey = defaultReqLogKey
 	c.resultlogkey = defaultResultLogKey
@@ -180,39 +170,32 @@ func (c *Collector) Close() error {
 }
 
 //註冊路徑
-func (c *Collector) addPaths(basepath string, handlers []HandlerFunc) {
-	errormessage(len(basepath) > 0, "Path can not be empty")
+func (c *Collector) addPaths(method, AbsolutePath string, handlers HandlersChain) {
+	errormessage(len(AbsolutePath) > 0, "Path can not be empty")
 	errormessage(len(handlers) > 0, "Handlers can not be empty")
+	errormessage(!c.nodes.IsExist(AbsolutePath), fmt.Sprintf("%s is exist", AbsolutePath))
 
-	errormessage(
-		!c.nodes.IsExist(basepath),
-		fmt.Sprintf("%s is exist", basepath),
-	)
-	c.nodes.Set(basepath, handlers)
+	debugPrintRoute(method, AbsolutePath, handlers)
+
+	c.nodes.Set(AbsolutePath, handlers)
 }
 
 //當LoggerMode為true時會調用指定的Logger以及Logkey
 func (c *Collector) HandleOnErr(r *Request, err error) {
-	if c.LogMode {
-		Parms := logger.CreateLogParms(r.Id, logger.ERROR, r.FilesName(), r.Method(), c.errlogkey(r, err))
-		c.Logger.Log(Parms)
-	}
+	Parms := CreateLogParms(r.Id, ERROR, r.FilesName(), r.Method(), c.errlogkey(r, err))
+	c.Logger.Log(Parms)
 }
 
 //當LoggerMode為true時會調用指定的Logger以及Logkey
 func (c *Collector) handleOnRequest(r *Request) {
-	if c.LogMode {
-		Parms := logger.CreateLogParms(r.Id, logger.REQUEST, r.FilesName(), r.Method(), c.requestlogkey(r))
-		c.Logger.Log(Parms)
-	}
+	Parms := CreateLogParms(r.Id, REQUEST, r.FilesName(), r.Method(), c.requestlogkey(r))
+	c.Logger.Log(Parms)
 }
 
 //當LoggerMode為true時會調用指定的Logger以及Logkey
 func (c *Collector) handleOnResult(ctx *Context) {
-	if c.LogMode {
-		Parms := logger.CreateLogParms(ctx.Request.Id, logger.RESULT, ctx.Request.FilesName(), ctx.Request.Method(), c.resultlogkey(ctx))
-		c.Logger.Log(Parms)
-	}
+	Parms := CreateLogParms(ctx.Request.Id, RESULT, ctx.Request.FilesName(), ctx.Request.Method(), c.resultlogkey(ctx))
+	c.Logger.Log(Parms)
 }
 
 func (c *Collector) allocateContext() interface{} {

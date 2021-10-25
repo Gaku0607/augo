@@ -90,6 +90,9 @@ func (e *Engine) Run() {
 	}
 	//開啟適配器
 	go e.s.RunByContext(e.ctx, complete)
+
+	debugPrint("Services are driven by %s", Windows)
+	debugPrint("%d threads used in the background", e.maxThread+2)
 }
 
 func (e *Engine) Close() error {

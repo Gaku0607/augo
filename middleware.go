@@ -2,8 +2,6 @@ package augo
 
 import (
 	"os"
-
-	"github.com/Gaku0607/augo/logger"
 )
 
 //當所有Handler都執行完成時刪除Request所有檔案
@@ -18,11 +16,11 @@ func DeletFiles() HandlerFunc {
 	}
 }
 
-func Recovery(log *logger.Logger) HandlerFunc {
+func Recovery(log *Logger) HandlerFunc {
 	return func(c *Context) {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Log(logger.CreateLogParms(c.Request.Id, logger.Recovery, c.Request.FilesName(), c.Request.method, logger.LogKey{"RecoveryMsg:": r.(error).Error()}))
+				log.Log(CreateLogParms(c.Request.Id, PANIC, c.Request.FilesName(), c.Request.method, LogKey{"RecoveryMsg:": r.(error).Error()}))
 				c.AbortWithError(r.(error))
 				return
 			}

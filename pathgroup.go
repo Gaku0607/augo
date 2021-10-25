@@ -30,9 +30,10 @@ func (g *PathGroup) Group(basepath string, handlers ...HandlerFunc) *PathGroup {
 }
 
 //將Group註冊到Collector中
-func (g *PathGroup) Handler(basepath string, handlers ...HandlerFunc) IPaths {
+func (g *PathGroup) Handler(method string, handlers ...HandlerFunc) IPaths {
 	g.collector.addPaths(
-		g.calculateAbsolutePath(basepath),
+		method,
+		g.calculateAbsolutePath(method),
 		g.combineHandlers(handlers),
 	)
 	return g.retrunObj()

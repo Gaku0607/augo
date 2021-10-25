@@ -7,17 +7,15 @@ import (
 	"time"
 
 	"github.com/Gaku0607/augo"
-	"github.com/Gaku0607/augo/logger"
 )
 
 func main() {
 	//設置系統
 	augo.SetSystemVersion(augo.MacOS)
 
-	logger.SetLogTitle("GAKU")
+	augo.SetLogTitle("GAKU")
 
-	c := augo.NewCollector()
-	c.Logger.Config.Format = logger.JSONFormatter
+	c := augo.DefautCollector()
 	c.Use(augo.Recovery(c.Logger), print1())
 	{
 		g1 := c.Group("/Users/YourPath1")
@@ -35,7 +33,7 @@ func main() {
 	engine := augo.NewEngine(
 		augo.MaxThread(5), //線程數
 		augo.SetContext(ctx),
-		augo.ScanIntval(time.Millisecond*1000), //提交
+		augo.ScanIntval(time.Millisecond*10000), //提交
 		augo.SetCollector(c),
 	)
 
