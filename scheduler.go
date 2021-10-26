@@ -90,11 +90,13 @@ func (s *Scheduler) RunByContext(ctx context.Context, complete <-chan struct{}) 
 	)
 	ticker := time.NewTicker(s.sleepIntvar)
 	for {
-		var activeThread chan *Request
 		//當已經沒有請求 並且 無活動的thread時 代表閒置狀態 進行休眠
 		if s.isRequsetEmpty() && active == 0 {
 			<-ticker.C //休眠
+			continue
 		}
+
+		var activeThread chan *Request
 
 		if !s.isRequsetEmpty() {
 			activeThread = s.pull()
@@ -119,8 +121,6 @@ func (s *Scheduler) RunByContext(ctx context.Context, complete <-chan struct{}) 
 				}
 				s.closeThread()
 				return
-			default:
-				break Loop
 			}
 		}
 	}
