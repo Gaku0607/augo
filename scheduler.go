@@ -121,6 +121,12 @@ func (s *Scheduler) RunByContext(ctx context.Context, complete <-chan struct{}) 
 				}
 				s.closeThread()
 				return
+			default:
+				if activeThread != nil {
+					activeThread = s.pull()
+				} else {
+					break Loop
+				}
 			}
 		}
 	}
