@@ -3,6 +3,7 @@ package augo
 import (
 	"context"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -147,6 +148,7 @@ func (e *Engine) scanDir() []*Request {
 		if !b.(bool) {
 			continue
 		}
+
 		files, err := ioutil.ReadDir(root)
 		req := NewRequest(root)
 		if err != nil {
@@ -154,16 +156,37 @@ func (e *Engine) scanDir() []*Request {
 			continue
 		}
 
-		if len(files) == 0 {
-			continue
-		}
+		if len(files) > 0 {
 
-		for _, file := range files {
-			req.Files = append(req.Files, filepath.Join(root, file.Name()))
+			if files, err = e.repeatScan(len(files), root); err != nil {
+				e.C.HandleOnErr(req, err)
+				continue
+			}
+
+			for _, file := range files {
+				req.Files = append(req.Files, filepath.Join(root, file.Name()))
+			}
+			reqs = append(reqs, req)
+			//當該root有請求存在時 在請求完成時會設置為false
+			e.scanpath.Set(root, false)
+
 		}
-		reqs = append(reqs, req)
-		//當該root有請求存在時 在請求完成時會設置為false
-		e.scanpath.Set(root, false)
 	}
 	return reqs
+}
+
+func (e *Engine) repeatScan(filecount int, path string) ([]os.FileInfo, error) {
+	//如果查詢到新的檔案 等待 並查詢到所有檔案為止
+	time.Sleep(time.Millisecond * 300)
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(files) == filecount || len(files) == 0 {
+		return files, nil
+	}
+
+	return e.repeatScan(len(files), path)
 }
