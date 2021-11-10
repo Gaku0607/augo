@@ -29,3 +29,7 @@ func SetSystemVersion(version string) {
 func GetSystemVersion() string {
 	return system_version
 }
+
+func GetPathChar() string {
+	return pathChar
+}
