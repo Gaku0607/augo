@@ -109,6 +109,12 @@ func (e *Engine) scheduler(in <-chan *Request, complete chan struct{}) {
 		if err := e.C.Request(req); err != nil {
 			e.C.HandleOnErr(req, err)
 		}
+
+		//將所有檔案紀錄 方便記錄去重
+		for _, f := range req.Files {
+			e.C.Visited(req.method, f)
+		}
+
 		//將完成的請求地址
 		e.scanpath.Set(req.root, true)
 		//完成信號
@@ -150,27 +156,39 @@ func (e *Engine) scanDir() []*Request {
 		}
 
 		files, err := ioutil.ReadDir(root)
+		if len(files) <= 0 && err == nil {
+			continue
+		}
+
 		req := NewRequest(root)
+
 		if err != nil {
 			e.C.HandleOnErr(req, err)
 			continue
 		}
 
-		if len(files) > 0 {
+		if files, err = e.repeatScan(len(files), root); err != nil {
+			e.C.HandleOnErr(req, err)
+			continue
+		}
 
-			if files, err = e.repeatScan(len(files), root); err != nil {
-				e.C.HandleOnErr(req, err)
+		for _, file := range files {
+
+			if e.C.IsVisited(req.method, file.Name()) {
 				continue
 			}
-
-			for _, file := range files {
-				req.Files = append(req.Files, filepath.Join(root, file.Name()))
-			}
-			reqs = append(reqs, req)
-			//當該root有請求存在時 在請求完成時會設置為false
-			e.scanpath.Set(root, false)
-
+			req.Files = append(req.Files, filepath.Join(root, file.Name()))
 		}
+
+		//檔案均為使用過且尚未刪除檔案
+		if len(req.Files) == 0 {
+			continue
+		}
+
+		reqs = append(reqs, req)
+		//當該root有請求存在時 在請求完成時會設置為false
+		e.scanpath.Set(root, false)
+
 	}
 	return reqs
 }

@@ -16,6 +16,38 @@ func IsDebugging() bool {
 	return debugCode == augomode
 }
 
+const (
+	DebugMode   = "debug"
+	ReleaseMode = "release"
+	TestMode    = "test"
+)
+const (
+	debugCode = iota
+	releaseCode
+	testCode
+)
+
+var augomode = debugCode
+var modeName = DebugMode
+
+// SetMode sets augo mode according to input string.
+func SetMode(value string) {
+	switch value {
+	case DebugMode, "":
+		augomode = debugCode
+	case ReleaseMode:
+		augomode = releaseCode
+	case TestMode:
+		augomode = testCode
+	default:
+		panic("augo mode unknown: " + value)
+	}
+	if value == "" {
+		value = DebugMode
+	}
+	modeName = value
+}
+
 var DebugPrintRouteFunc func(absolutePath string, nuHandlers int)
 
 func debugPrintRoute(absolutePath string, handlers HandlersChain) {

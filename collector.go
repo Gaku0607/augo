@@ -43,6 +43,13 @@ func ResultLogKey(f func(*Context) LogKey) CollectorOption {
 	}
 }
 
+//修改Collector的VisitStorage
+func SetVisitStorage(v VisitStorage) CollectorOption {
+	return func(c *Collector) {
+		c.visit = v
+	}
+}
+
 var (
 	//Collector默認所使用的ErrLogKey
 	defaultErrLogKey = func(_ *Request, e error) LogKey {
@@ -66,6 +73,10 @@ type Collector struct {
 	//(參考logger.Logger logger.LoggerConfig)
 
 	Logger *Logger
+
+	//
+
+	visit VisitStorage
 
 	//Log輸出REQUEST時 可自定義RequestLogKey的部分
 	//Collector默認使用defaultRequestLogKey
@@ -128,6 +139,7 @@ func (c *Collector) defautParms() {
 	}
 
 	c.Logger = NowLogger()
+	c.visit = defaultVisitStorage()
 	c.errlogkey = defaultErrLogKey
 	c.requestlogkey = defaultReqLogKey
 	c.resultlogkey = defaultResultLogKey
@@ -181,6 +193,14 @@ func (c *Collector) addPaths(AbsolutePath string, handlers HandlersChain) {
 	debugPrintRoute(AbsolutePath, handlers)
 
 	c.nodes.Set(AbsolutePath, handlers)
+}
+
+func (c *Collector) IsVisited(mothed, filename string) bool {
+	return c.visit.IsVisited(mothed, filename)
+}
+
+func (c *Collector) Visited(mothed, filename string) {
+	c.visit.Visited(mothed, filename)
 }
 
 //當LoggerMode為true時會調用指定的Logger以及Logkey
