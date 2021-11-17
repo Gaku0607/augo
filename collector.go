@@ -133,7 +133,7 @@ func (c *Collector) defautParms() {
 		root:      true,
 		collector: c,
 	}
-	c.nodes = make(map[string]HandlersChain)
+	c.nodes = make(map[string]*Node)
 	c.pool.New = func() interface{} {
 		return c.allocateContext()
 	}
@@ -156,7 +156,7 @@ func (c *Collector) Request(req *Request) (err error) {
 	ctx := c.pool.Get().(*Context)
 	//每個req都需重置先前的紀錄
 	ctx.reset(req)
-	ctx.handlers = c.nodes[ctx.Request.root]
+	ctx.handlers = c.nodes.GetHandlers(ctx.Request.root)
 	ctx.Next()
 
 	if ctx.Errs.IsEmpty() {
@@ -185,22 +185,29 @@ func (c *Collector) Close() error {
 }
 
 //註冊路徑
-func (c *Collector) addPaths(AbsolutePath string, handlers HandlersChain) {
+func (c *Collector) addPaths(AbsolutePath string, handlers HandlersChain, visitmode bool) {
 	errormessage(len(AbsolutePath) > 0, "Path can not be empty")
 	errormessage(len(handlers) > 0, "Handlers can not be empty")
 	errormessage(!c.nodes.IsExist(AbsolutePath), fmt.Sprintf("%s is exist", AbsolutePath))
 
 	debugPrintRoute(AbsolutePath, handlers)
 
-	c.nodes.Set(AbsolutePath, handlers)
+	c.nodes.Set(AbsolutePath, handlers, visitmode)
 }
 
-func (c *Collector) IsVisited(mothed, filename string) bool {
-	return c.visit.IsVisited(mothed, filename)
+//確認該service下 指定的file是否已被訪問過
+func (c *Collector) IsVisited(root, filename string) bool {
+	if c.nodes.VisitMode(root) {
+		return c.visit.IsVisited(root, filename)
+	}
+	return false
 }
 
-func (c *Collector) Visited(mothed, filename string) {
-	c.visit.Visited(mothed, filename)
+//將已被訪問過的file儲存 以防重複訪問
+func (c *Collector) Visited(root, filename string) {
+	if c.nodes.VisitMode(root) {
+		c.visit.Visited(root, filename)
+	}
 }
 
 //當LoggerMode為true時會調用指定的Logger以及Logkey

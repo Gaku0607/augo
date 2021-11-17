@@ -112,7 +112,7 @@ func (e *Engine) scheduler(in <-chan *Request, complete chan struct{}) {
 
 		//將所有檔案紀錄 方便記錄去重
 		for _, f := range req.Files {
-			e.C.Visited(req.method, filepath.Base(f))
+			e.C.Visited(req.root, filepath.Base(f))
 		}
 
 		//將完成的請求地址
@@ -174,7 +174,7 @@ func (e *Engine) scanDir() []*Request {
 
 		for _, file := range files {
 
-			if e.C.IsVisited(req.method, file.Name()) {
+			if e.C.IsVisited(req.root, file.Name()) {
 				continue
 			}
 			req.Files = append(req.Files, filepath.Join(root, file.Name()))

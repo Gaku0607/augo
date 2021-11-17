@@ -16,17 +16,17 @@ func defaultVisitStorage() VisitStorage {
 	return &HasStorage{rw: sync.RWMutex{}, visitedmap: make(map[uint64]bool)}
 }
 
-func (h *HasStorage) IsVisited(method, filename string) bool {
+func (h *HasStorage) IsVisited(root, filename string) bool {
 	h.rw.RLock()
 	defer h.rw.RUnlock()
-	if ok := h.visitedmap[hasCode(method, filename)]; ok {
+	if ok := h.visitedmap[hasCode(root, filename)]; ok {
 		return true
 	}
 	return false
 }
 
-func (h *HasStorage) Visited(method, filename string) {
+func (h *HasStorage) Visited(root, filename string) {
 	h.rw.Lock()
 	defer h.rw.Unlock()
-	h.visitedmap[hasCode(method, filename)] = true
+	h.visitedmap[hasCode(root, filename)] = true
 }

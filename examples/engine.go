@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -15,24 +13,21 @@ func main() {
 
 	augo.SetLogTitle("GAKU")
 
-	c := augo.DefautCollector()
+	c := augo.NewCollector()
 	c.Use(augo.Recovery(c.Logger), print1())
 	{
-		g1 := c.Group("/Users/YourPath1")
-		g1.Handler("/Test1", print2())
+		g1 := c.Group("/Users/YourPath")
+		g1.HandlerWithVisit("/Method", print2())
 
 	}
 
 	{
-		c.Handler("/Users/gaku/IRIS系統測試檔案/出倉單", print3())
+		c.Handler("/Users/YourPath", false, print3())
 	}
-	//設置定時
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
 
 	engine := augo.NewEngine(
-		augo.MaxThread(5), //線程數
-		augo.SetContext(ctx),
-		augo.ScanIntval(time.Millisecond*10000), //提交
+		augo.MaxThread(5),                      //線程數
+		augo.ScanIntval(time.Millisecond*1000), //提交
 		augo.SetCollector(c),
 	)
 
@@ -60,7 +55,7 @@ func print2() augo.HandlerFunc {
 
 func print3() augo.HandlerFunc {
 	return func(d *augo.Context) {
-		// fmt.Println("test:", "3")
-		d.Error(errors.New("err3"))
+		fmt.Println("test:", "3")
+		// d.Error(errors.New("err3"))
 	}
 }

@@ -4,7 +4,7 @@ import "fmt"
 
 type IPaths interface {
 	Use(...HandlerFunc) IPaths
-	Handler(string, ...HandlerFunc) IPaths
+	Handler(string, bool, ...HandlerFunc) IPaths
 }
 
 type PathGroup struct {
@@ -30,12 +30,17 @@ func (g *PathGroup) Group(basepath string, handlers ...HandlerFunc) *PathGroup {
 }
 
 //將Group註冊到Collector中
-func (g *PathGroup) Handler(basepath string, handlers ...HandlerFunc) IPaths {
+func (g *PathGroup) Handler(basepath string, visitmode bool, handlers ...HandlerFunc) IPaths {
 	g.collector.addPaths(
 		g.calculateAbsolutePath(basepath),
 		g.combineHandlers(handlers),
+		visitmode,
 	)
 	return g.retrunObj()
+}
+
+func (g *PathGroup) HandlerWithVisit(basepath string, handlers ...HandlerFunc) IPaths {
+	return g.Handler(basepath, true, handlers...)
 }
 
 //返回該Group的絕對路徑
