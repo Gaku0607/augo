@@ -112,7 +112,7 @@ func (e *Engine) scheduler(in <-chan *Request, complete chan struct{}) {
 
 		//將所有檔案紀錄 方便記錄去重
 		for _, f := range req.Files {
-			e.C.Visited(req.method, f)
+			e.C.Visited(req.method, filepath.Base(f))
 		}
 
 		//將完成的請求地址
