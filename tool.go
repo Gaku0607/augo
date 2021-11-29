@@ -1,9 +1,9 @@
 package augo
 
 import (
-	"hash/fnv"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func lastChar(str string) uint8 {
@@ -25,7 +25,7 @@ func joinPaths(absolutePath, relativePath string) string {
 	finalpath := filepath.Join(absolutePath, relativePath)
 	versionchar := []uint8(pathChar)[0]
 
-	if lastChar(finalpath) != versionchar {
+	if lastChar(relativePath) == versionchar && lastChar(finalpath) != versionchar {
 		return finalpath + pathChar
 	}
 	return finalpath
@@ -33,20 +33,13 @@ func joinPaths(absolutePath, relativePath string) string {
 
 func deletFiles(path []string) error {
 	for _, p := range path {
-		if err := deleteFile(p); err != nil {
+		if err := os.Remove(p); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func deleteFile(path string) error {
-	return os.Remove(path)
-}
-
-func hasCode(method, file string) uint64 {
-	f := fnv.New64a()
-	f.Write([]byte(method))
-	f.Write([]byte(file))
-	return f.Sum64()
+func getmethod(dir string) string {
+	return dir[strings.LastIndex(dir, pathChar)+1:]
 }

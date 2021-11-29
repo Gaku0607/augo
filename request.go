@@ -13,8 +13,7 @@ type Request struct {
 }
 
 func NewRequest(root string, path ...string) *Request {
-	dir := filepath.Dir(root)
-	return &Request{root: root, Files: path, method: dir[strings.LastIndex(dir, pathChar)+1:]}
+	return &Request{root: root, Files: path, method: getmethod(root)}
 }
 
 func (r *Request) FilesName() string {

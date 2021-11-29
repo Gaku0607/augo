@@ -23,7 +23,14 @@ func MaxThread(threadcount int) EngineOptions {
 //掃描資料夾的間隔時間
 func ScanIntval(intval time.Duration) EngineOptions {
 	return func(e *Engine) {
-		e.intval = intval
+		e.scanIntval = intval
+	}
+}
+
+//定期刪除已訪問的間隔時間
+func DeleteVisitedIntval(intval time.Duration) EngineOptions {
+	return func(e *Engine) {
+		e.deleteIntval = intval
 	}
 }
 
@@ -42,10 +49,12 @@ func SetCollector(c *Collector) EngineOptions {
 }
 
 type Engine struct {
-	maxThread int
-	intval    time.Duration
-	s         *Scheduler
-	C         *Collector
+	maxThread    int
+	scanIntval   time.Duration
+	deleteIntval time.Duration
+
+	s *Scheduler
+	C *Collector
 
 	scanpath cmap.ConcurrentMap //掃描地址 線程安全
 	wg       *sync.WaitGroup
@@ -67,7 +76,7 @@ func (e *Engine) defualtParms() {
 	e.ctx = context.Background()
 	e.s = NewScheduler()
 	e.wg = &sync.WaitGroup{}
-	e.intval = time.Millisecond * 200
+	e.scanIntval = time.Millisecond * 200
 	e.scanpath = cmap.New()
 	e.C = NewCollector()
 }
@@ -80,20 +89,20 @@ func (e *Engine) Run() {
 	//設置掃描地址
 	e.setScanPaths()
 	//背景提交任務
-	e.wg.Add(1)
 	go e.submit()
 	//完成信號
 	var complete chan struct{} = make(chan struct{})
 	//從適配器中獲取請求並執行
 	for i := 0; i < e.maxThread; i++ {
-		e.wg.Add(1)
 		go e.scheduler(e.s.RequestChan(), complete)
 	}
 	//開啟適配器
 	go e.s.RunByContext(e.ctx, complete)
+	//開啟定時篩除歷史紀錄
+	go e.deleteVisited()
 
 	debugPrint("Services are driven by %s", GetSystemVersion())
-	debugPrint("%d threads used in the background", e.maxThread+2)
+	debugPrint("%d threads used in the background", e.maxThread)
 }
 
 func (e *Engine) Close() error {
@@ -103,6 +112,7 @@ func (e *Engine) Close() error {
 
 //從適配器中獲取請求並執行
 func (e *Engine) scheduler(in <-chan *Request, complete chan struct{}) {
+	e.wg.Add(1)
 	defer e.wg.Done()
 	for req := range in {
 
@@ -132,8 +142,9 @@ func (e *Engine) setScanPaths() {
 
 //定期掃描提交並提交請求
 func (e *Engine) submit() {
+	e.wg.Add(1)
 	defer e.wg.Done()
-	t := time.NewTicker(e.intval)
+	t := time.NewTicker(e.scanIntval)
 	for {
 		select {
 		case <-t.C:
@@ -207,4 +218,43 @@ func (e *Engine) repeatScan(filecount int, path string) ([]os.FileInfo, error) {
 	}
 
 	return e.repeatScan(len(files), path)
+}
+
+//當有設置刪除間隔時間時開啟線程
+func (e *Engine) deleteVisited() {
+
+	if e.deleteIntval <= 0 {
+		return
+	}
+
+	debugPrint("Open delete access history,intval: %v", e.deleteIntval)
+
+	deletefn := func() {
+		path, exist := e.C.visit.GetVisited()
+		if !exist {
+			return
+		}
+
+		filename := filepath.Base(path)
+		dir := filepath.Dir(path)
+
+		if err := os.Remove(path); err != nil {
+			e.C.Logger.Log(CreateLogParms(0, ERROR, filename, getmethod(dir), LogKey{DELETE_ERROR: err.Error()}))
+		}
+		e.C.visit.RemoveVisited(path)
+	}
+
+	e.wg.Add(1)
+	defer e.wg.Done()
+	t := time.NewTicker(e.deleteIntval)
+	for {
+
+		select {
+		case <-t.C:
+			deletefn()
+		case <-e.ctx.Done():
+			return
+		}
+
+	}
 }

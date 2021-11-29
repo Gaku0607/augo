@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+
 	//設置系統
 	augo.SetSystemVersion(augo.MacOS)
 
@@ -18,7 +19,6 @@ func main() {
 	{
 		g1 := c.Group("/Users/YourPath")
 		g1.HandlerWithVisit("/Method", print2())
-
 	}
 
 	{
@@ -29,6 +29,7 @@ func main() {
 		augo.MaxThread(5),                      //線程數
 		augo.ScanIntval(time.Millisecond*1000), //提交
 		augo.SetCollector(c),
+		augo.DeleteVisitedIntval(time.Second*time.Duration(8)),
 	)
 
 	engine.Run()

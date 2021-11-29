@@ -3,30 +3,65 @@ package augo
 import "sync"
 
 type VisitStorage interface {
-	IsVisited(string, string) bool
-	Visited(string, string)
+	IsVisited(string) bool
+	Visited(string)
+	Size() int
+	GetVisited() (string, bool)
+	RemoveVisited(string)
 }
 
-type HasStorage struct {
+type PathStorage struct {
 	rw         sync.RWMutex
-	visitedmap map[uint64]bool
+	visitedmap map[string]bool
+	size       int
 }
 
 func defaultVisitStorage() VisitStorage {
-	return &HasStorage{rw: sync.RWMutex{}, visitedmap: make(map[uint64]bool)}
+	return &PathStorage{rw: sync.RWMutex{}, visitedmap: make(map[string]bool)}
 }
 
-func (h *HasStorage) IsVisited(root, filename string) bool {
+func (h *PathStorage) IsVisited(path string) bool {
 	h.rw.RLock()
 	defer h.rw.RUnlock()
-	if ok := h.visitedmap[hasCode(root, filename)]; ok {
+	if ok := h.visitedmap[path]; ok {
 		return true
 	}
 	return false
 }
 
-func (h *HasStorage) Visited(root, filename string) {
+func (h *PathStorage) Visited(path string) {
 	h.rw.Lock()
 	defer h.rw.Unlock()
-	h.visitedmap[hasCode(root, filename)] = true
+	h.visitedmap[path] = true
+	h.size++
+}
+
+func (h *PathStorage) RemoveVisited(path string) {
+	h.rw.Lock()
+	defer h.rw.Unlock()
+	if exist := h.visitedmap[path]; !exist {
+		return
+	}
+	delete(h.visitedmap, path)
+	h.size--
+	return
+}
+
+func (h *PathStorage) GetVisited() (path string, exist bool) {
+	h.rw.RLock()
+	defer h.rw.RUnlock()
+	if h.size <= 0 {
+		return
+	}
+
+	for key := range h.visitedmap {
+		return key, true
+	}
+	return
+}
+
+func (h *PathStorage) Size() int {
+	h.rw.RLock()
+	defer h.rw.RUnlock()
+	return h.size
 }

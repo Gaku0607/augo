@@ -2,6 +2,7 @@ package augo
 
 import (
 	"fmt"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 )
@@ -53,7 +54,7 @@ func SetVisitStorage(v VisitStorage) CollectorOption {
 var (
 	//Collector默認所使用的ErrLogKey
 	defaultErrLogKey = func(_ *Request, e error) LogKey {
-		return LogKey{"errMsg": e.Error()}
+		return LogKey{NORMAL_ERROR: e.Error()}
 	}
 	//Collector默認所使用的ReqLogKey
 	defaultReqLogKey = func(r *Request) LogKey {
@@ -190,7 +191,7 @@ func (c *Collector) addPaths(AbsolutePath string, handlers HandlersChain, visitm
 	errormessage(len(handlers) > 0, "Handlers can not be empty")
 	errormessage(!c.nodes.IsExist(AbsolutePath), fmt.Sprintf("%s is exist", AbsolutePath))
 
-	debugPrintRoute(AbsolutePath, handlers)
+	debugPrintRoute(AbsolutePath, handlers, visitmode)
 
 	c.nodes.Set(AbsolutePath, handlers, visitmode)
 }
@@ -198,7 +199,7 @@ func (c *Collector) addPaths(AbsolutePath string, handlers HandlersChain, visitm
 //確認該service下 指定的file是否已被訪問過
 func (c *Collector) IsVisited(root, filename string) bool {
 	if c.nodes.VisitMode(root) {
-		return c.visit.IsVisited(root, filename)
+		return c.visit.IsVisited(filepath.Join(root, filename))
 	}
 	return false
 }
@@ -206,7 +207,7 @@ func (c *Collector) IsVisited(root, filename string) bool {
 //將已被訪問過的file儲存 以防重複訪問
 func (c *Collector) Visited(root, filename string) {
 	if c.nodes.VisitMode(root) {
-		c.visit.Visited(root, filename)
+		c.visit.Visited(filepath.Join(root, filename))
 	}
 }
 
