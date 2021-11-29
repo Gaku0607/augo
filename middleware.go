@@ -14,7 +14,7 @@ func Recovery(log *Logger) HandlerFunc {
 	return func(c *Context) {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Log(CreateLogParms(c.Request.Id, PANIC, c.Request.FilesName(), c.Request.method, LogKey{"RecoveryMsg:": r.(error).Error()}))
+				log.Log(CreateLogParms(c.Request.Id, PANIC, c.Request.FilesName(), c.Request.method, LogKey{PANIC_ERROR: r.(error).Error()}))
 				c.AbortWithError(r.(error))
 				return
 			}

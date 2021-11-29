@@ -1,0 +1,7 @@
+package augo
+
+const (
+	NORMAL_ERROR = "ERROR"
+	PANIC_ERROR  = "PANIC_MSG"
+	DELETE_ERROR = "DELETE_ERROR"
+)
