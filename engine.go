@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -239,8 +240,9 @@ func (e *Engine) deleteVisited() {
 		filename := filepath.Base(path)
 		dir := filepath.Dir(path)
 
-		if err := os.Remove(path); err != nil {
+		if err := os.Remove(path); err != nil && !strings.Contains(err.Error(), "no such file") {
 			e.C.Logger.Log(CreateLogParms(0, ERROR, filename, getmethod(dir), LogKey{DELETE_ERROR: err.Error()}))
+			return
 		}
 		e.C.visit.RemoveVisited(path)
 	}
