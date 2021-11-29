@@ -89,16 +89,19 @@ func (e *Engine) Run() {
 	//設置掃描地址
 	e.setScanPaths()
 	//背景提交任務
+	e.wg.Add(1)
 	go e.submit()
 	//完成信號
 	var complete chan struct{} = make(chan struct{})
 	//從適配器中獲取請求並執行
 	for i := 0; i < e.maxThread; i++ {
+		e.wg.Add(1)
 		go e.scheduler(e.s.RequestChan(), complete)
 	}
 	//開啟適配器
 	go e.s.RunByContext(e.ctx, complete)
 	//開啟定時篩除歷史紀錄
+	e.wg.Add(1)
 	go e.deleteVisited()
 
 	debugPrint("Services are driven by %s", GetSystemVersion())
@@ -112,7 +115,6 @@ func (e *Engine) Close() error {
 
 //從適配器中獲取請求並執行
 func (e *Engine) scheduler(in <-chan *Request, complete chan struct{}) {
-	e.wg.Add(1)
 	defer e.wg.Done()
 	for req := range in {
 
@@ -142,7 +144,6 @@ func (e *Engine) setScanPaths() {
 
 //定期掃描提交並提交請求
 func (e *Engine) submit() {
-	e.wg.Add(1)
 	defer e.wg.Done()
 	t := time.NewTicker(e.scanIntval)
 	for {
@@ -222,7 +223,7 @@ func (e *Engine) repeatScan(filecount int, path string) ([]os.FileInfo, error) {
 
 //當有設置刪除間隔時間時開啟線程
 func (e *Engine) deleteVisited() {
-
+	defer e.wg.Done()
 	if e.deleteIntval <= 0 {
 		return
 	}
@@ -244,8 +245,6 @@ func (e *Engine) deleteVisited() {
 		e.C.visit.RemoveVisited(path)
 	}
 
-	e.wg.Add(1)
-	defer e.wg.Done()
 	t := time.NewTicker(e.deleteIntval)
 	for {
 
