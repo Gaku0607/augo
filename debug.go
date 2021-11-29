@@ -2,14 +2,13 @@ package augo
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 )
 
-var debugTitle = fmt.Sprintf("[%s-Debug]", LogTitle)
+var debugTitle = fmt.Sprintf("[%s]", LogTitle)
 
 func setDeBugTitle(title string) {
-	debugTitle = fmt.Sprintf("[%s-Debug]", title)
+	debugTitle = fmt.Sprintf("[%s]", title)
 }
 
 func IsDebugging() bool {
@@ -48,15 +47,19 @@ func SetMode(value string) {
 	modeName = value
 }
 
-var DebugPrintRouteFunc func(absolutePath string, nuHandlers int)
+var DebugPrintRouteFunc func(absolutePath string, nuHandlers int, visitmode bool)
 
-func debugPrintRoute(absolutePath string, handlers HandlersChain) {
+func debugPrintRoute(absolutePath string, handlers HandlersChain, visitmode bool) {
 	if IsDebugging() {
 		nuHandlers := len(handlers)
 		if DebugPrintRouteFunc == nil {
-			debugPrint("[SERVICE] %-6s --> %-4s (%d handlers)\n", absolutePath, filepath.Base(absolutePath), nuHandlers)
+			if visitmode {
+				debugPrint("[SERVICE][VISITMODE] %-6s -->  (%d handlers)\n", absolutePath, nuHandlers)
+			} else {
+				debugPrint("[SERVICE] %-6s -->  (%d handlers)\n", absolutePath, nuHandlers)
+			}
 		} else {
-			DebugPrintRouteFunc(absolutePath, nuHandlers)
+			DebugPrintRouteFunc(absolutePath, nuHandlers, visitmode)
 		}
 	}
 }
