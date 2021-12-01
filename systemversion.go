@@ -19,7 +19,7 @@ func SetSystemVersion(version string) {
 	case Windows:
 		pathChar = `\`
 		delete_msg = "The system cannot find the file"
-		newline = "\n\r"
+		newline = "\r\n"
 
 	case MacOS:
 		pathChar = `/`
@@ -47,4 +47,8 @@ func GetPathChar() string {
 
 func GetNewLine() string {
 	return newline
+}
+
+func SetNewLine(line string) {
+	newline = line
 }
