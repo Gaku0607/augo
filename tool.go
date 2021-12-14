@@ -43,3 +43,22 @@ func deletFiles(path []string) error {
 func getmethod(dir string) string {
 	return dir[strings.LastIndex(dir, pathChar)+1:]
 }
+
+func isPathExist(path string) bool {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsExist(err) {
+			return true
+		}
+		return false
+	}
+	return true
+}
+
+func makeServiceRouter(path string) error {
+	if !isPathExist(path) {
+		if err := os.MkdirAll(path, os.ModePerm); err != nil {
+			return err
+		}
+	}
+	return nil
+}

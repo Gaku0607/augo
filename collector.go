@@ -191,6 +191,9 @@ func (c *Collector) addPaths(AbsolutePath string, handlers HandlersChain, visitm
 	errormessage(len(handlers) > 0, "Handlers can not be empty")
 	errormessage(!c.nodes.IsExist(AbsolutePath), fmt.Sprintf("%s is exist", AbsolutePath))
 
+	err := makeServiceRouter(AbsolutePath)
+	errormessage(err == nil, fmt.Sprintf("Failed to open service address: %s", AbsolutePath))
+
 	debugPrintRoute(AbsolutePath, handlers, visitmode)
 
 	c.nodes.Set(AbsolutePath, handlers, visitmode)
