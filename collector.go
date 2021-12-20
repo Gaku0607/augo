@@ -62,7 +62,7 @@ var (
 	}
 	//Collector默認所使用的ResultLogKey
 	defaultResultLogKey = func(c *Context) LogKey {
-		return c.Keys
+		return c.LogKey
 	}
 )
 

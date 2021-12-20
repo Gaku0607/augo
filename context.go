@@ -40,15 +40,18 @@ type Context struct {
 	handlers HandlersChain
 	Request  *Request
 	Keys     map[string]interface{}
+	LogKey   map[string]interface{}
 	Errs     ErrMsgs
 	index    int8
 	mu       sync.RWMutex
+	logmu    sync.RWMutex
 }
 
 func (c *Context) reset(req *Request) {
 	c.Request = req
 	c.handlers = nil
 	c.Keys = nil
+	c.LogKey = nil
 	c.index = -1
 	c.Errs = c.Errs[0:0]
 }
@@ -83,6 +86,24 @@ func (c *Context) Error(err error) error {
 	}
 	c.Errs = append(c.Errs, err)
 	return err
+}
+
+//獲取LogKey
+func (c *Context) GetLogKey(key string) (interface{}, bool) {
+	c.logmu.RLock()
+	defer c.logmu.RUnlock()
+	val, exist := c.LogKey[key]
+	return val, exist
+}
+
+//儲存LogKey
+func (c *Context) SetLogKey(key string, val interface{}) {
+	c.logmu.Lock()
+	defer c.logmu.Unlock()
+	if c.LogKey == nil {
+		c.Keys = make(map[string]interface{})
+	}
+	c.LogKey[key] = val
 }
 
 //******************************************************************
