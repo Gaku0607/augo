@@ -101,7 +101,7 @@ func (c *Context) SetLogKey(key string, val interface{}) {
 	c.logmu.Lock()
 	defer c.logmu.Unlock()
 	if c.LogKey == nil {
-		c.Keys = make(map[string]interface{})
+		c.LogKey = make(map[string]interface{})
 	}
 	c.LogKey[key] = val
 }
